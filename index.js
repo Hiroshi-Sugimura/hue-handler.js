@@ -186,7 +186,7 @@ Hue.getState = function( ip ) {
 	let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/' + Hue.userKey + '/lights';
 	request({ url: hueurl, method: 'get', timeout: 5000 })
 		.then( (rep) => {
-			Hue.facilities = Hue.objectSort( JSON.parse(rep) );
+			Hue.facilities[Hue.bridge.ipaddress] = {bridge: Hue.bridge, devices: Hue.objectSort(JSON.parse(rep))};
 			Hue.userFunc( Hue.bridge.ipaddress, rep, null);
 		} ).catch( (err) => {
 			// Hue.userFunc( Hue.bridge.ipaddress, null, err);

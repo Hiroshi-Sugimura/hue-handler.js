@@ -59,6 +59,33 @@ Hue.setObserveFacilities( 3000, () => {
 # Data stracture
 
 
+Hue.facilities is following stracture.
+
+```
+{
+  '192.168.2.192': {
+    bridge: {
+      name: 'Philips hue (192.168.2.192)',
+      manufacturer: 'Royal Philips Electronics',
+      ipaddress: '192.168.2.192',
+      model: [Object],
+      version: [Object],
+      icons: [Array]
+    },
+    devices: {
+      '1': [Object],
+      '3': [Object],
+      '4': [Object],
+      '6': [Object],
+      '7': [Object],
+      '8': [Object],
+      '9': [Object],
+      '10': [Object]
+    }
+  }
+}
+```
+
 # API
 
 ## 初期化と受信, 監視, initialize, receriver callback and observation
@@ -152,5 +179,6 @@ x Warranty
 
 ## Log
 
+- 0.2.0 renew stracture
 - 0.1.0 first published
 - 0.0.1 start up
