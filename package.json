@@ -1,23 +1,26 @@
 {
-  "name": "hue-handler",
-  "version": "0.2.0",
-  "description": "This module provides hue managements API.",
-  "main": "index.js",
-  "scripts": {
-    "test": "cd ..&& cd .. && npm test"
-  },
+	"name": "hue-handler",
+	"version": "0.2.2",
+	"description": "This module provides hue managements API.",
+	"main": "index.js",
+	"dependencies": {
+		"node-hue-api": "^4.0.9"
+	},
+	"scripts": {
+		"test": "cd ..&& cd .. && npm test"
+	},
 	"repository": {
-    "type": "git",
-    "url": "https://github.com/Hiroshi-Sugimura/hue-handler.js"
-  },
-  "author": {
-    "name": "Hiroshi SUGIMURA"
-  },
-  "license": "MIT",
-  "Keywords": [
-    "Philips hue",
-    "Smart house",
-    "IoT",
-    "Home appliances"
-  ]
+		"type": "git",
+		"url": "https://github.com/Hiroshi-Sugimura/hue-handler.js"
+	},
+	"author": {
+		"name": "Hiroshi SUGIMURA"
+	},
+	"license": "MIT",
+	"Keywords": [
+		"Philips hue",
+		"Smart house",
+		"IoT",
+		"Home appliances"
+	]
 }

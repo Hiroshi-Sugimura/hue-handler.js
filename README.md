@@ -94,7 +94,7 @@ Hue.facilities is following stracture.
 
 ```
 // Hue受信後の処理
-let Huereceived = function(rIP, response, error) {
+let Huereceived = function(gwIP, response, error) {
 
 	console.log('-- recenved');
 
@@ -105,11 +105,11 @@ let Huereceived = function(rIP, response, error) {
 
 	if( response == 'Linking' ) {
 		console.log('Please push Link button.');
-	}else{
-		console.dir(rIP);
-		console.dir(response);
-		console.dir(error);
+		return;
 	}
+
+	console.dir(gwIP);
+	console.dir(response);
 };
 
 
@@ -179,6 +179,8 @@ x Warranty
 
 ## Log
 
+- 0.2.2 setStatus
+- 0.2.1 manage errors
 - 0.2.0 renew stracture
 - 0.1.0 first published
 - 0.0.1 start up
