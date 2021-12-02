@@ -17,12 +17,11 @@ npm i hue-handler
 # Demo, example
 
 ```
-
 const Hue = require('hue-handler');
 
 ////////////////////////////////////////
 // test config
-let hueKey = 'KKHocxnOwlkBCuPUCLc2Nc1hSYESV2G2LSxEn3kt';
+let hueKey = '';  // 分かっている場合はここに記述，初めての時は空文字でよい
 
 
 // Hue受信後の処理
@@ -31,7 +30,7 @@ let Huereceived = function(rIP, response, error) {
 	console.log('-- recenved');
 
 	if( error ) {
-		console.error( error );
+		console.error( 'Error:', error );
 		return;
 	}
 
@@ -45,14 +44,28 @@ let Huereceived = function(rIP, response, error) {
 };
 
 
-// Hue.initialize( hueKey, Huereceived );
-hueKey = Hue.initialize( hueKey, Huereceived, {debugMode: true} );
+( async ()=> {
+	try{
+		hueKey = await Hue.initialize( hueKey, Huereceived, {debugMode: false} );
+	}catch(e){
+		hueKey = '';
+		console.error('initialize error.');
+		console.dir(e);
+	}
 
+	if( hueKey != '' ) {  // 接続成功
+		// Hue.facilitiesの定期的監視
+		Hue.setObserveFacilities( 3000, () => {
+			console.log('-- Observe Facilities');
+			console.log( JSON.stringify(Hue.facilities, null, '  ') );
+		});
 
-// Hue.facilitiesの定期的監視
-Hue.setObserveFacilities( 3000, () => {
-	console.dir( Hue.facilities );
-});
+		Hue.setState( "192.168.10.110", "/lights/1/state", '{"on":true}' );  // ライトONの例
+		await Hue.sleep(3000);
+		Hue.setState( "192.168.10.110", "/lights/1/state", '{"on":false}' );  // ライトOFFの例
+	}
+
+})();
 ```
 
 
@@ -179,6 +192,7 @@ x Warranty
 
 ## Log
 
+- 1.0.0 失敗時のリトライ処理，async/await調整，
 - 0.2.2 setStatus
 - 0.2.1 manage errors
 - 0.2.0 renew stracture

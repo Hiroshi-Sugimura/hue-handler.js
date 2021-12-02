@@ -29,6 +29,7 @@ let Hue = {
 	debugMode: false,
 	autoGetTimerEnabled: false,
 	autoGetTimerID: {},  // ID管理，Timeoutクラス
+	retryRemain: 3,     // リトライ回数
 
 	// public
 	facilities: {},	// 全機器情報リスト
@@ -38,7 +39,7 @@ let Hue = {
 // inner functions
 
 // 時間つぶす関数
-Hue.sleep = async function (ms) {
+Hue.sleep = function (ms) {
 	return new Promise(function(resolve) {
 		setTimeout(function() {resolve()}, ms);
 	})
@@ -100,15 +101,14 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 
 	Hue.autoGetTimerEnabled = false; // autoGetが動いているか？
 	Hue.autoGetTimerID = {};  // ID管理，Timeoutクラス
+	Hue.retryRemain = 3;  // リトライ回数
 
-	if( Hue.debugMode == true ) {
-		console.log('==== hue-manager.js ====');
-		console.log('deviceType:', Hue.deviceType);
-		console.log('autoGet:', Hue.autoGet, ', autoGetInterval: ', Hue.autoGetInterval );
-		console.log('debugMode:', Hue.debugMode );
+	Hue.debugMode? console.log('==== hue-manager.js ===='):0;
+	Hue.debugMode? console.log('deviceType:', Hue.deviceType):0;
+	Hue.debugMode? console.log('autoGet:', Hue.autoGet, ', autoGetInterval: ', Hue.autoGetInterval ):0;
+	Hue.debugMode? console.log('debugMode:', Hue.debugMode ):0;
+	Hue.debugMode? console.log('-- getBridge'):0;
 
-		console.log('-- getBridge');
-	}
 	let bridges = [];
 	while( bridges.length == 0 ) {
 		try{
@@ -116,22 +116,21 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 			if( bridges.length == 0 ) {
 				// 失敗した
 				Hue.userFunc(null, null, "Can't find bride.");
-				Hue.sleep(30000);
+				if( Hue.retryRemain -= 1 ==0 ) { return ''; } // リトライ限界が来たのでkey無しで返却
 			}
 		}catch (e) {
 			throw new Error("Exception! Hue.searchBridge.");
 		}
 	}
+	Hue.retryRemain = 3;  // リトライ回数復帰
 	Hue.bridge = bridges[0];  // 一つしか管理しない
 
-	if( Hue.debugMode == true ) {
-		console.log('connect:', Hue.bridge.ipaddress);
-	}
+	Hue.debugMode? console.log('connect:', Hue.bridge.ipaddress):0;
+
 
 	if( Hue.userKey === '' ) {  // 新規Link
-		if( Hue.debugMode == true ) {
-			console.log('new userKey and authorize.');
-		}
+		Hue.debugMode? console.log('new userKey and authorize.'):0;
+
 		let hueurl;
 		let res = 'unauthorized user';
 
@@ -140,8 +139,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 			.then( (body)=>{
 				// console.log('----');
 				if( body[0].error ) {
-					// errorとはいえ，こちらが正規ルート = ユーザがいない
-					// console.error('error');
+					// errorとはいえ，こちらが正規ルート = ユーザがいない，だからこれから登録処理という流れ
 				}else{
 					res = body[0].description;
 				}
@@ -150,14 +148,13 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 				throw err;
 			} );
 
-		console.log('get Hue.userKey');
+		Hue.debugMode? console.log('get Hue.userKey'):0;
 		while( Hue.userKey == '' ) {
 			// console.log( '.' );
 			hueurl = 'http://' + Hue.bridge.ipaddress + '/api';
-			if( Hue.debugMode == true ) {
-				console.dir( Hue.deviceType );
-			}
-			request({ url: hueurl, method: 'post', timeout: 5000, json: { devicetype: Hue.deviceType } })
+			Hue.debugMode? console.dir( Hue.deviceType ):0;
+
+			await request({ url: hueurl, method: 'post', timeout: 5000, json: { devicetype: Hue.deviceType } })
 				.then( (body)=>{
 					// console.log('----');
 					if( body[0] && body[0].success ) {
@@ -172,12 +169,10 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 					console.error( err );
 					throw err;
 				} );
-			await Hue.sleep(5000);
+			await Hue.sleep(5 * 1000); // 5秒待つ
 		}
 	}else{
-		if( Hue.debugMode == true ) {
-			console.log('use userKey: ', Hue.userKey );
-		}
+		Hue.debugMode? console.log('use userKey: ', Hue.userKey ):0;
 	}
 
 	if( Hue.autoGet == true ) {
@@ -246,9 +241,8 @@ Hue.autoGetTimerSet = function( ip, interval ) {
 // インタフェース，監視を始める
 Hue.autoGetStart = function ( interval ) {
 	// configファイルにobservationDevsが設定されていれば実施
-	if( Hue.debugMode ) {
-		console.log( 'Hue.autoGet is started.', interval, 'ms' );
-	}
+	Hue.debugMode? console.log( 'Hue.autoGet is started.', interval, 'ms' ):0;
+
 	if( Hue.autoGetTimerEnabled == true ) { // すでに開始していたら何もしない
 		return;
 	}
@@ -261,9 +255,7 @@ Hue.autoGetStart = function ( interval ) {
 
 // インタフェース，監視をやめる
 Hue.autoGetStop = function() {
-	if( Hue.debugMode ) {
-		console.log( 'Hue.autoGet is stoped.' );
-	}
+	Hue.debugMode? console.log( 'Hue.autoGet is stoped.' ):0;
 
 	Hue.autoGetTimerEnabled = false;
 
