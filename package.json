@@ -7,7 +7,7 @@
 		"node-hue-api": "^4.0.9"
 	},
 	"scripts": {
-		"test": "cd ..&& cd .. && npm test"
+		"start": "node test"
 	},
 	"repository": {
 		"type": "git",

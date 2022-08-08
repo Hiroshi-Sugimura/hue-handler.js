@@ -189,6 +189,22 @@ x Liability
 x Warranty
 ```
 
+## Using other modules and License
+
+
+### ISC
+- reuest-promise-native (https://www.npmjs.com/package/request-promise-native)
+
+
+### MIT
+- OS (Node.js Core Module)
+
+
+### Apache-2.0
+
+- node-hue-api (https://www.npmjs.com/package/node-hue-api)
+
+License(https://www.apache.org/licenses/LICENSE-2.0)
 
 ## Log
 
