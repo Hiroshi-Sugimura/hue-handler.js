@@ -23,6 +23,7 @@ let Hue = {
 
 	// private
 	bridge: {},
+	gonnaInitialize: false,
 	canceled: false,
 	autoGet: true, // true = 自動的にGetをする
 	autoGetWaitings: 0, // 自動取得待ちの個数
@@ -85,11 +86,18 @@ Hue.dummy = function() {
 // 初期化
 Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,deviceName:'', userName:'', autoGet: true, debugMode: false}) {
 
+	// 二重初期化起動の禁止（初期化は何回やってもよいが、初期化中だけは初期化を受け付けない）
+	if( Hue.gonnaInitialize ) {
+		Hue.debugMode? console.log('-- prohibit double initialize (hue-hundler.js) '):0;
+		return;
+	}
+	Hue.gonnaInitialize    = true;
+
 	Hue.userKey    = userKey  == undefined ? ''        : userKey;
 	Hue.userFunc   = userFunc == undefined ? Hue.dummy : userFunc;
 
-	Hue.debugMode         = Options.debugMode == undefined || Options.debugMode == false ? false : true;   // true: show debug log
-	Hue.autoGet           = Options.autoGet   != false ? true : false;	// 自動的なデータ送信の有無
+	Hue.debugMode  = Options.debugMode == undefined || Options.debugMode == false ? false : true;   // true: show debug log
+	Hue.autoGet    = Options.autoGet   != false ? true : false;	// 自動的なデータ送信の有無
 
 	Hue.appName    = Options.appName    == undefined || Options.appName    === '' ? 'hueManager'  : Options.appName;
 	Hue.deviceName = Options.deviceName == undefined || Options.deviceName === '' ? os.hostname() : Options.deviceName;
@@ -97,10 +105,11 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 
 	Hue.deviceType = Hue.appName + '#' + Hue.deviceName + ' ' + Hue.userName;
 
+	Hue.canceled   = false; // 初期化のキャンセルシグナル
 	Hue.autoGetEnabled = false; // autoGetが動いているか？
 	Hue.retryRemain = 3;  // リトライ回数
 
-	Hue.debugMode? console.log('==== hue-manager.js ===='):0;
+	Hue.debugMode? console.log('==== hue-hundler.js ===='):0;
 	Hue.debugMode? console.log('deviceType:', Hue.deviceType):0;
 	Hue.debugMode? console.log('autoGet:', Hue.autoGet ):0;
 	Hue.debugMode? console.log('debugMode:', Hue.debugMode ):0;
@@ -116,6 +125,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 				if( Hue.retryRemain -= 1 ==0 ) { return ''; } // リトライ限界が来たのでkey無しで返却
 			}
 		}catch (e) {
+			Hue.gonnaInitialize = false;
 			throw new Error("Exception! Hue.searchBridge.");
 		}
 	}
@@ -142,6 +152,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 				}
 			} ).catch( (err) => {
 				console.error( err );
+				Hue.gonnaInitialize = false;
 				throw err;
 			} );
 
@@ -164,6 +175,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 					}
 				} ).catch( (err) => {
 					console.error( err );
+					Hue.gonnaInitialize = false;
 					throw err;
 				} );
 			await Hue.sleep(5 * 1000); // 5秒待つ
@@ -171,6 +183,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 
 		if( Hue.canceled ) {
 			Hue.userFunc( Hue.bridge.ipaddress, 'Canceled', null );
+			Hue.gonnaInitialize = false;
 			return false;
 		}
 
@@ -183,6 +196,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 		Hue.getState( Hue.bridge.ipaddress );
 	}
 
+	Hue.gonnaInitialize = false;
 	return Hue.userKey;
 };
 

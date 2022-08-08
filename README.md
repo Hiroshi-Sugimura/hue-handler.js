@@ -282,6 +282,8 @@ license-checker --csv
 
 ## Log
 
+- 1.1.1 initialize中initializeを禁止
+- 1.1.0 監視をnode-cronにした、cancel機能追加
 - 1.0.0 失敗時のリトライ処理，async/await調整，
 - 0.2.2 setStatus
 - 0.2.1 manage errors
