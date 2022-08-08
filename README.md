@@ -282,6 +282,7 @@ license-checker --csv
 
 ## Log
 
+- 1.1.2 cancelのときのinitializeの戻り値は''とした
 - 1.1.1 initialize中initializeを禁止
 - 1.1.0 監視をnode-cronにした、cancel機能追加
 - 1.0.0 失敗時のリトライ処理，async/await調整，

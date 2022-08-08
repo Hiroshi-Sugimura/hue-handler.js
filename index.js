@@ -184,7 +184,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 		if( Hue.canceled ) {
 			Hue.userFunc( Hue.bridge.ipaddress, 'Canceled', null );
 			Hue.gonnaInitialize = false;
-			return false;
+			return ''; // cancelの時はkeyを何も返さない
 		}
 
 	}else{
