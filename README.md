@@ -282,6 +282,7 @@ license-checker --csv
 
 ## Log
 
+- 1.1.3 二重禁止の時の戻り値を申請したhueKyeを返却することとした
 - 1.1.2 cancelのときのinitializeの戻り値は''とした
 - 1.1.1 initialize中initializeを禁止
 - 1.1.0 監視をnode-cronにした、cancel機能追加

@@ -89,7 +89,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 	// 二重初期化起動の禁止（初期化は何回やってもよいが、初期化中だけは初期化を受け付けない）
 	if( Hue.gonnaInitialize ) {
 		Hue.debugMode? console.log('-- prohibit double initialize (hue-hundler.js) '):0;
-		return;
+		return Hue.userKey;
 	}
 	Hue.gonnaInitialize    = true;
 
