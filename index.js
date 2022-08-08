@@ -88,7 +88,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 
 	// 二重初期化起動の禁止（初期化は何回やってもよいが、初期化中だけは初期化を受け付けない）
 	if( Hue.gonnaInitialize ) {
-		Hue.debugMode? console.log('-- prohibit double initialize (hue-hundler.js) '):0;
+		Hue.debugMode? console.log('-- Hue.initialize, prohibit double initialize (hue-hundler.js) '):0;
 		return Hue.userKey;
 	}
 	Hue.gonnaInitialize    = true;
@@ -113,7 +113,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 	Hue.debugMode? console.log('deviceType:', Hue.deviceType):0;
 	Hue.debugMode? console.log('autoGet:', Hue.autoGet ):0;
 	Hue.debugMode? console.log('debugMode:', Hue.debugMode ):0;
-	Hue.debugMode? console.log('-- getBridge'):0;
+	Hue.debugMode? console.log('-- Hue.initialize, getBridge'):0;
 
 	let bridges = [];
 	while( bridges.length == 0 ) {
@@ -138,11 +138,11 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 	Hue.retryRemain = 3;  // リトライ回数復帰
 	Hue.bridge = bridges[0];  // 一つしか管理しない
 
-	Hue.debugMode? console.log('connect:', Hue.bridge.ipaddress):0;
+	Hue.debugMode? console.log('-- Hue.initialize, connect:', Hue.bridge.ipaddress):0;
 
 
 	if( Hue.userKey === '' ) {  // 新規Link
-		Hue.debugMode? console.log('new userKey and authorize.'):0;
+		Hue.debugMode? console.log('-- Hue.initialize, new userKey and authorize.'):0;
 
 		if( Hue.canceled ) { // 初期化のキャンセルシグナルが来たので終わる
 			Hue.userFunc( Hue.bridge.ipaddress, 'Canceled', null );
@@ -166,8 +166,8 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 				throw err;
 			} );
 
-		Hue.debugMode? console.log('get Hue.userKey'):0;
-		while( Hue.userKey == '' || !Hue.canceled) {  // keyを獲得するか、ユーザーがキャンセルするまで無限に実行
+		Hue.debugMode? console.log('-- Hue.initialize, get Hue.userKey'):0;
+		while( Hue.userKey == '' && Hue.canceled == false) {  // keyを獲得するか、ユーザーがキャンセルするまで無限に実行
 			if( Hue.canceled ) { // 初期化のキャンセルシグナルが来たので終わる
 				Hue.userFunc( Hue.bridge.ipaddress, 'Canceled', null );
 				Hue.gonnaInitialize = false;
@@ -175,12 +175,12 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 			}
 
 			hueurl = 'http://' + Hue.bridge.ipaddress + '/api';
-			Hue.debugMode? console.dir( Hue.deviceType ):0;
+			Hue.debugMode? console.log( '-- Hue.initialize, deviceType:', Hue.deviceType ):0;
 
 			await request({ url: hueurl, method: 'post', timeout: 5000, json: { devicetype: Hue.deviceType } })
 				.then( (body)=>{
-					// console.log('----');
 					if( body[0] && body[0].success ) {
+						Hue.debugMode? console.log( 'Hue.initialize, Link is succeeded.' ):0;
 						Hue.userKey = body[0].success.username;
 					}else{
 						Hue.userFunc( Hue.bridge.ipaddress, 'Linking', null );
@@ -197,7 +197,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 		}
 
 	}else{
-		Hue.debugMode? console.log('use userKey: ', Hue.userKey ):0;
+		Hue.debugMode? console.log('Hue.initialize, use userKey: ', Hue.userKey ):0;
 	}
 
 	if( Hue.autoGet == true ) {
@@ -211,7 +211,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 
 
 Hue.initializeCancel = function() {
-	Hue.debugMode? console.log( 'Hue.initialize is canceled. Please wait.' ):0;
+	Hue.debugMode? console.log( 'Hue.initializeCancel(). Please wait.' ):0;
 	Hue.canceled = true;
 }
 
