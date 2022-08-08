@@ -103,7 +103,7 @@ Hue.facilities is following stracture.
 
 ## 初期化と受信, 監視, initialize, receriver callback and observation
 
-- 初期化
+- 初期化: Hue.initialize( key = '', callback, debugmode = {debugMode: false} );
 
 ```
 // Hue受信後の処理
@@ -116,13 +116,19 @@ let Huereceived = function(gwIP, response, error) {
 		return;
 	}
 
-	if( response == 'Linking' ) {
+	switch( response ) {  // レスポンスを処理
+		case 'Linking':
 		console.log('Please push Link button.');
-		return;
-	}
+		break;
 
-	console.dir(gwIP);
-	console.dir(response);
+		case 'Canceled':
+		console.log('Please push Link button.');
+		break;
+
+		default:
+		console.log('gwIP:', gwIP);
+		console.log('res:', response);
+	}
 };
 
 
@@ -130,7 +136,13 @@ let Huereceived = function(gwIP, response, error) {
 hueKey = Hue.initialize( hueKey, Huereceived, {debugMode: true} );
 ```
 
-- 監視
+- 初期化中のキャンセル
+```
+Hue.initializeCancel();
+```
+
+- 監視: Hue.setObserveFacilities( interval, callback )
+
 
 ```
 // Hue.facilitiesの定期的監視
@@ -191,20 +203,82 @@ x Warranty
 
 ## Using other modules and License
 
+- このモジュールで使用している、他モジュールとライセンスは下記のようになっています。このリストはlicense-chekerで作製しています。
+- Here is modules and license using this module. The list is extracted by license-checker function.
 
-### ISC
-- reuest-promise-native (https://www.npmjs.com/package/request-promise-native)
+```
+license-checker --csv
+```
 
+- List
 
-### MIT
-- OS (Node.js Core Module)
+```
+"ajv@6.12.4","MIT","https://github.com/ajv-validator/ajv"
+"asn1@0.2.4","MIT","https://github.com/joyent/node-asn1"
+"assert-plus@1.0.0","MIT","https://github.com/mcavage/node-assert-plus"
+"asynckit@0.4.0","MIT","https://github.com/alexindigo/asynckit"
+"aws-sign2@0.7.0","Apache-2.0","https://github.com/mikeal/aws-sign"
+"aws4@1.10.1","MIT","https://github.com/mhart/aws4"
+"axios@0.21.4","MIT","https://github.com/axios/axios"
+"bcrypt-pbkdf@1.0.2","BSD-3-Clause","https://github.com/joyent/node-bcrypt-pbkdf"
+"bottleneck@2.19.5","MIT","https://github.com/SGrondin/bottleneck"
+"caseless@0.12.0","Apache-2.0","https://github.com/mikeal/caseless"
+"combined-stream@1.0.8","MIT","https://github.com/felixge/node-combined-stream"
+"core-util-is@1.0.2","MIT","https://github.com/isaacs/core-util-is"
+"dashdash@1.14.1","MIT","https://github.com/trentm/node-dashdash"
+"delayed-stream@1.0.0","MIT","https://github.com/felixge/node-delayed-stream"
+"ecc-jsbn@0.1.2","MIT","https://github.com/quartzjer/ecc-jsbn"
+"extend@3.0.2","MIT","https://github.com/justmoon/node-extend"
+"extsprintf@1.3.0","MIT","https://github.com/davepacheco/node-extsprintf"
+"fast-deep-equal@3.1.3","MIT","https://github.com/epoberezkin/fast-deep-equal"
+"fast-json-stable-stringify@2.1.0","MIT","https://github.com/epoberezkin/fast-json-stable-stringify"
+"follow-redirects@1.15.1","MIT","https://github.com/follow-redirects/follow-redirects"
+"forever-agent@0.6.1","Apache-2.0","https://github.com/mikeal/forever-agent"
+"form-data@2.3.3","MIT","https://github.com/form-data/form-data"
+"get-ssl-certificate@2.3.3","MIT","https://github.com/johncrisostomo/get-ssl-certificate"
+"getpass@0.1.7","MIT","https://github.com/arekinath/node-getpass"
+"har-schema@2.0.0","ISC","https://github.com/ahmadnassri/har-schema"
+"har-validator@5.1.5","MIT","https://github.com/ahmadnassri/node-har-validator"
+"http-signature@1.2.0","MIT","https://github.com/joyent/node-http-signature"
+"hue-handler@1.1.0","MIT","https://github.com/Hiroshi-Sugimura/hue-handler.js"
+"is-typedarray@1.0.0","MIT","https://github.com/hughsk/is-typedarray"
+"isstream@0.1.2","MIT","https://github.com/rvagg/isstream"
+"jsbn@0.1.1","MIT","https://github.com/andyperlitch/jsbn"
+"json-schema-traverse@0.4.1","MIT","https://github.com/epoberezkin/json-schema-traverse"
+"json-schema@0.2.3","AFLv2.1,BSD","https://github.com/kriszyp/json-schema"
+"json-stringify-safe@5.0.1","ISC","https://github.com/isaacs/json-stringify-safe"
+"jsprim@1.4.1","MIT","https://github.com/joyent/node-jsprim"
+"lodash@4.17.20","MIT","https://github.com/lodash/lodash"
+"mime-db@1.44.0","MIT","https://github.com/jshttp/mime-db"
+"mime-types@2.1.27","MIT","https://github.com/jshttp/mime-types"
+"node-cron@3.0.1","ISC","https://github.com/merencia/node-cron"
+"node-hue-api@4.0.11","Apache-2.0","https://github.com/peter-murray/node-hue-api"
+"oauth-sign@0.9.0","Apache-2.0","https://github.com/mikeal/oauth-sign"
+"performance-now@2.1.0","MIT","https://github.com/braveg1rl/performance-now"
+"psl@1.8.0","MIT","https://github.com/lupomontero/psl"
+"punycode@2.1.1","MIT","https://github.com/bestiejs/punycode.js"
+"qs@6.5.2","BSD-3-Clause","https://github.com/ljharb/qs"
+"request-promise-core@1.1.4","ISC","https://github.com/request/promise-core"
+"request-promise-native@1.0.9","ISC","https://github.com/request/request-promise-native"
+"request@2.88.2","Apache-2.0","https://github.com/request/request"
+"safe-buffer@5.2.1","MIT","https://github.com/feross/safe-buffer"
+"safer-buffer@2.1.2","MIT","https://github.com/ChALkeR/safer-buffer"
+"sshpk@1.16.1","MIT","https://github.com/joyent/node-sshpk"
+"stealthy-require@1.1.1","ISC","https://github.com/analog-nico/stealthy-require"
+"tough-cookie@2.5.0","BSD-3-Clause","https://github.com/salesforce/tough-cookie"
+"tunnel-agent@0.6.0","Apache-2.0","https://github.com/mikeal/tunnel-agent"
+"tweetnacl@0.14.5","Unlicense","https://github.com/dchest/tweetnacl-js"
+"uri-js@4.4.0","BSD-2-Clause","https://github.com/garycourt/uri-js"
+"uuid@3.4.0","MIT","https://github.com/uuidjs/uuid"
+"verror@1.10.0","MIT","https://github.com/davepacheco/node-verror"
+```
 
+- Apache-2.0 License is Here. (https://www.apache.org/licenses/LICENSE-2.0)
+- ISC License is Here. (https://opensource.org/licenses/ISC)
+- MIT License is Here. (https://opensource.org/licenses/mit-license.php)
+- BSD-3-Clause is Here. (https://opensource.org/licenses/BSD-3-Clause)
+- AFLv2.1 is Here. (https://spdx.org/licenses/AFL-2.1.html)
 
-### Apache-2.0
-
-- node-hue-api (https://www.npmjs.com/package/node-hue-api)
-
-License(https://www.apache.org/licenses/LICENSE-2.0)
 
 ## Log
 

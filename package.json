@@ -1,10 +1,11 @@
 {
 	"name": "hue-handler",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"description": "This module provides hue managements API.",
 	"main": "index.js",
 	"dependencies": {
-		"node-hue-api": "^4.0.9"
+		"node-hue-api": "^4.0.9",
+		"node-cron": "3.0.1"
 	},
 	"scripts": {
 		"start": "node test"
