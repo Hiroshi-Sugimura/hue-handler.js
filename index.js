@@ -118,11 +118,17 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 	let bridges = [];
 	while( bridges.length == 0 ) {
 		try{
+			if( Hue.canceled ) { // 初期化のキャンセルシグナルが来たので終わる
+				Hue.userFunc( Hue.bridge.ipaddress, 'Canceled', null );
+				Hue.gonnaInitialize = false;
+				return Hue.userKey; // cancelの時はkeyを何も返さない
+			}
+
 			bridges = await Hue.searchBridge(20000); // 20 second timeout
 			if( bridges.length == 0 ) {
 				// 失敗した
 				Hue.userFunc(null, null, "Can't find bride.");
-				if( Hue.retryRemain -= 1 ==0 ) { return ''; } // リトライ限界が来たのでkey無しで返却
+				if( Hue.retryRemain -= 1 ==0 ) { return Hue.userKey; } // リトライ限界が来たのでkey無しで返却
 			}
 		}catch (e) {
 			Hue.gonnaInitialize = false;
@@ -138,10 +144,14 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 	if( Hue.userKey === '' ) {  // 新規Link
 		Hue.debugMode? console.log('new userKey and authorize.'):0;
 
-		let hueurl;
-		let res = 'unauthorized user';
+		if( Hue.canceled ) { // 初期化のキャンセルシグナルが来たので終わる
+			Hue.userFunc( Hue.bridge.ipaddress, 'Canceled', null );
+			Hue.gonnaInitialize = false;
+			return Hue.userKey; // cancelの時はkeyを何も返さない
+		}
 
-		hueurl = 'http://' + Hue.bridge.ipaddress + '/api/newdeveloper';
+		let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/newdeveloper';
+		let res = 'unauthorized user';
 		await request( { url: hueurl, method: 'get', timeout: 5000 } )
 			.then( (body)=>{
 				// console.log('----');
@@ -158,7 +168,12 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 
 		Hue.debugMode? console.log('get Hue.userKey'):0;
 		while( Hue.userKey == '' || !Hue.canceled) {  // keyを獲得するか、ユーザーがキャンセルするまで無限に実行
-			// console.log( '.' );
+			if( Hue.canceled ) { // 初期化のキャンセルシグナルが来たので終わる
+				Hue.userFunc( Hue.bridge.ipaddress, 'Canceled', null );
+				Hue.gonnaInitialize = false;
+				return Hue.userKey; // cancelの時はkeyを何も返さない
+			}
+
 			hueurl = 'http://' + Hue.bridge.ipaddress + '/api';
 			Hue.debugMode? console.dir( Hue.deviceType ):0;
 
@@ -179,12 +194,6 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 					throw err;
 				} );
 			await Hue.sleep(5 * 1000); // 5秒待つ
-		}
-
-		if( Hue.canceled ) {
-			Hue.userFunc( Hue.bridge.ipaddress, 'Canceled', null );
-			Hue.gonnaInitialize = false;
-			return ''; // cancelの時はkeyを何も返さない
 		}
 
 	}else{
