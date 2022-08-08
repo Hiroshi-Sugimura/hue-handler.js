@@ -282,6 +282,7 @@ license-checker --csv
 
 ## Log
 
+- 1.1.6 debug追加
 - 1.1.5 cancel条件のbug fix
 - 1.1.4 cancelタイミングを増やした
 - 1.1.3 二重禁止の時の戻り値を申請したhueKyeを返却することとした

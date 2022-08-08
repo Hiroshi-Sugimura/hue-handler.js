@@ -110,6 +110,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 	Hue.retryRemain = 3;  // リトライ回数
 
 	Hue.debugMode? console.log('==== hue-hundler.js ===='):0;
+	Hue.debugMode? console.log('userKey:', Hue.userKey):0;
 	Hue.debugMode? console.log('deviceType:', Hue.deviceType):0;
 	Hue.debugMode? console.log('autoGet:', Hue.autoGet ):0;
 	Hue.debugMode? console.log('debugMode:', Hue.debugMode ):0;
