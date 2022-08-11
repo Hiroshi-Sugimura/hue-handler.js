@@ -282,6 +282,7 @@ license-checker --csv
 
 ## Log
 
+- 1.2.0 setStateのobject対応
 - 1.1.6 debug追加
 - 1.1.5 cancel条件のbug fix
 - 1.1.4 cancelタイミングを増やした

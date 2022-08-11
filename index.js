@@ -219,6 +219,8 @@ Hue.initializeCancel = function() {
 
 Hue.getState = function( ip ) {
 	// 状態取得
+	Hue.debugMode? console.log( 'Hue.getState() ip:', ip ):0;
+
 	let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/' + Hue.userKey + '/lights';
 	request({ url: hueurl, method: 'get', timeout: 5000 })
 		.then( (rep) => {
@@ -237,8 +239,15 @@ Hue.getState = function( ip ) {
 };
 
 
-Hue.setState = function( ip, url, json ) {
+Hue.setState = function( ip, url, _json ) {
 	// 状態セット
+	Hue.debugMode? console.log( 'Hue.setState() ip:', ip, 'url:', url, 'json', _json ):0;
+
+	let json = "";  // jsonだっつってるのにobject入れてくる場合がある。
+	if( typeof _json != 'string' ) {
+		json = JSON.stringify(_json);
+	}
+
 	let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/' + Hue.userKey + url;
 	request({ url: hueurl, method: 'put', headers:{"content-type":"application/json"},body: json, timeout: 5000 })
 		.then( (rep) => {
