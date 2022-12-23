@@ -284,6 +284,7 @@ license-checker --csv
 
 ## Log
 
+- 2.0.1 監視を１分毎にした。そのうちカスタムできるようにする。
 - 2.0.0 request-promise-nativeがdeprecatedになっているので、base moduleをaxiosに変更する。
 - 1.2.0 setStateのobject対応
 - 1.1.6 debug追加

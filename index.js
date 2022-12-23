@@ -63,6 +63,7 @@ Hue.objectSort = function (obj) {
 	return map;
 };
 
+
 //////////////////////////////////////////////////////////////////////
 // Hue特有の手続き
 //////////////////////////////////////////////////////////////////////
@@ -216,7 +217,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 Hue.initializeCancel = function() {
 	Hue.debugMode? console.log( 'Hue.initializeCancel(). Please wait.' ):0;
 	Hue.canceled = true;
-}
+};
 
 
 Hue.getState = function() {
@@ -280,7 +281,7 @@ Hue.autoGetStart = function () {
 	}
 
 	if( Hue.bridge.ipaddress ) { // IPがすでにないと例外になるので
-		Hue.autoGetEnabled = cron.schedule('*/3 * * * *', () => {  // 3分毎にautoget
+		Hue.autoGetEnabled = cron.schedule('0 * * * * *', () => {  // 1分毎にautoget
 			Hue.getState();
 		});
 
