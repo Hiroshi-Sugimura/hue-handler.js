@@ -284,6 +284,7 @@ license-checker --csv
 
 ## Log
 
+- 2.1.0 定期的な監視いらないので消した
 - 2.0.2 いらないdebugログをとった
 - 2.0.1 監視を１分毎にした。そのうちカスタムできるようにする。
 - 2.0.0 request-promise-nativeがdeprecatedになっているので、base moduleをaxiosに変更する。

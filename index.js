@@ -25,9 +25,6 @@ let Hue = {
   bridge: {},
   gonnaInitialize: false,
   canceled: false,
-  autoGet: true, // true = 自動的にGetをする
-  autoGetWaitings: 0, // 自動取得待ちの個数
-  autoGetEnabled: false,
   retryRemain: 3,     // リトライ回数
   debugMode: false,
 
@@ -85,7 +82,7 @@ Hue.dummy = function() {
 
 //////////////////////////////////////////////////////////////////////
 // 初期化
-Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,deviceName:'', userName:'', autoGet: true, debugMode: false}) {
+Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,deviceName:'', userName:'', debugMode: false}) {
 
 	// 二重初期化起動の禁止（初期化は何回やってもよいが、初期化中だけは初期化を受け付けない）
 	if( Hue.gonnaInitialize ) {
@@ -98,7 +95,6 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 	Hue.userFunc   = userFunc == undefined ? Hue.dummy : userFunc;
 
 	Hue.debugMode  = Options.debugMode == undefined || Options.debugMode == false ? false : true;   // true: show debug log
-	Hue.autoGet    = Options.autoGet   != false ? true : false;	// 自動的なデータ送信の有無
 
 	Hue.appName    = Options.appName    == undefined || Options.appName    === '' ? 'hueManager'  : Options.appName;
 	Hue.deviceName = Options.deviceName == undefined || Options.deviceName === '' ? os.hostname() : Options.deviceName;
@@ -107,16 +103,16 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 	Hue.deviceType = Hue.appName + '#' + Hue.deviceName + ' ' + Hue.userName;
 
 	Hue.canceled   = false; // 初期化のキャンセルシグナル
-	Hue.autoGetEnabled = false; // autoGetが動いているか？
 	Hue.retryRemain = 3;  // リトライ回数
 
 	Hue.debugMode? console.log('==== hue-hundler.js ===='):0;
 	Hue.debugMode? console.log('userKey:', Hue.userKey):0;
 	Hue.debugMode? console.log('deviceType:', Hue.deviceType):0;
-	Hue.debugMode? console.log('autoGet:', Hue.autoGet ):0;
 	Hue.debugMode? console.log('debugMode:', Hue.debugMode ):0;
 	Hue.debugMode? console.log('-- Hue.initialize, getBridge'):0;
 
+	//==========================================================================
+	// ブリッジの発見
 	let bridges = [];
 	while( bridges.length == 0 ) {
 		try{
@@ -142,7 +138,8 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 
 	Hue.debugMode? console.log('-- Hue.initialize, connect:', Hue.bridge.ipaddress):0;
 
-
+	//==========================================================================
+	// Link
 	if( Hue.userKey === '' ) {  // 新規Link
 		Hue.debugMode? console.log('-- Hue.initialize, new userKey and authorize.'):0;
 
@@ -204,12 +201,9 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 		Hue.debugMode? console.log('Hue.initialize, use userKey: ', Hue.userKey ):0;
 	}
 
-	if( Hue.autoGet == true ) {
-		Hue.autoGetStart();
-		Hue.getState();
-	}
+	Hue.getState();
 
-	Hue.gonnaInitialize = false;
+	Hue.gonnaInitialize = false;  // 初期化中フラグ、初期化中キャンセルに利用
 	return Hue.userKey;
 };
 
@@ -220,17 +214,17 @@ Hue.initializeCancel = function() {
 };
 
 
-Hue.getState = function() {
+Hue.getState = async function() {
 	// 状態取得
 	Hue.debugMode? console.log( 'Hue.getState()' ):0;
 
 	let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/' + Hue.userKey + '/lights';
-	axios.get( hueurl, { timeout: 5000 })
+	await axios.get( hueurl, { timeout: 5000 })
 		.then( (res) => {
 			let rep = res.data;
 			rep = Hue.objectSort(rep);
 
-			if( rep.error ) { // Linkしていない、keyが違うなど、受信エラー
+			if( rep.error ) {  // Linkしていない、keyが違うなど、受信エラー
 				Hue.userFunc(Hue.bridge.ipaddress, rep, rep.error.description );
 			}else{
 				Hue.facilities[Hue.bridge.ipaddress] = {bridge: Hue.bridge, devices: rep};
@@ -267,58 +261,7 @@ Hue.setState = async function( url, bodyObj ) {
 };
 
 
-//////////////////////////////////////////////////////////////////////
-// 定期的なデバイスの監視
-
-// 監視を始める
-Hue.autoGetStart = function () {
-	// configファイルにobservationDevsが設定されていれば実施
-	Hue.debugMode? console.log( 'Hue.autoGet is started.' ):0;
-
-	if( Hue.autoGetEnabled ) { // すでに開始していたら何もしない
-		return;
-	}
-
-	if( Hue.bridge.ipaddress ) { // IPがすでにないと例外になるので
-		Hue.autoGetEnabled = cron.schedule('0 * * * * *', () => {  // 1分毎にautoget
-			Hue.getState();
-		});
-
-		Hue.autoGetEnabled.start();
-	}
-};
-
-// 監視をやめる
-Hue.autoGetStop = function() {
-	Hue.debugMode? console.log( 'Hue.autoGet is stoped.' ):0;
-
-	if( Hue.autoGetEnabled ) { // すでに開始していたらautoget停止
-		Hue.autoGetEnabled.stop();
-	}
-
-	Hue.autoGetEnabled = false;
-};
-
-
-//////////////////////////////////////////////////////////////////////
-// facilitiesの定期的な監視
-// ネットワーク内のEL機器全体情報を更新したらユーザの関数を呼び出す
-// facilitiesにて変更あれば呼び出される
-Hue.setObserveFacilities = function ( interval, onChanged ) {
-	let oldVal = JSON.stringify(Hue.objectSort(Hue.facilities));
-	const onObserve = function() {
-		const newVal = JSON.stringify(Hue.objectSort(Hue.facilities));
-		if ( oldVal == newVal ) return;
-		onChanged();
-		oldVal = newVal;
-	};
-
-	setInterval( onObserve, interval );
-};
-
-
 module.exports = Hue;
-
 //////////////////////////////////////////////////////////////////////
 // EOF
 //////////////////////////////////////////////////////////////////////
