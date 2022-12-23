@@ -43,7 +43,7 @@ Hue.sleep = function (ms) {
 	return new Promise(function(resolve) {
 		setTimeout(function() {resolve()}, ms);
 	})
-}
+};
 
 
 // キーでソートしてからJSONにする
@@ -253,16 +253,15 @@ Hue.setState = async function( url, bodyObj ) {
 	}
 
 	let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/' + Hue.userKey + url;
-	// axios.put( hueurl, bodyObj, { params:{headers:{"content-type":"application/json"}, timeout: 5000} })
 	const res = await axios.put( hueurl, bodyObj, { headers: {"Content-Type":"application/json"}, timeout: 5000} )
 		.catch( (err) => {
 			// Hue.userFunc( Hue.bridge.ipaddress, null, err);
-			console.error(err);
+			// console.error(err);
 			throw err;
 		} );
 
 	let rep = res.data;
-	console.log( rep );
+	Hue.debugMode? console.log( 'Hue.setState() rep:', rep ):0;
 	rep = Hue.objectSort(rep);
 	Hue.userFunc( Hue.bridge.ipaddress, rep, null);
 };
