@@ -4,7 +4,7 @@
 'use strict'
 
 const v3 = require('node-hue-api').v3;
-const request = require('request-promise-native');
+const axios = require('axios');
 const os = require('os');
 const cron = require('node-cron');
 
@@ -14,25 +14,25 @@ const cron = require('node-cron');
 let Hue = {
 	// member
 	// user config
-	appName: 'hueHandler',
-	deviceName: 'hostname',
-	userName: 'sugilab',
-	deviceType: '', // = appName + '#' + deviceName + ' ' + userName,
-	userKey: '',  // default
-	userFunc: {},  // callback function
+  appName: 'hueHandler',
+  deviceName: 'hostname',
+  userName: 'sugilab',
+  deviceType: '', // = appName + '#' + deviceName + ' ' + userName,
+  userKey: '',  // default
+  userFunc: {},  // callback function
 
 	// private
-	bridge: {},
-	gonnaInitialize: false,
-	canceled: false,
-	autoGet: true, // true = 自動的にGetをする
-	autoGetWaitings: 0, // 自動取得待ちの個数
-	autoGetEnabled: false,
-	retryRemain: 3,     // リトライ回数
-	debugMode: false,
+  bridge: {},
+  gonnaInitialize: false,
+  canceled: false,
+  autoGet: true, // true = 自動的にGetをする
+  autoGetWaitings: 0, // 自動取得待ちの個数
+  autoGetEnabled: false,
+  retryRemain: 3,     // リトライ回数
+  debugMode: false,
 
 	// public
-	facilities: {},	// 全機器情報リスト
+  facilities: {},	// 全機器情報リスト
 };
 
 ////////////////////////////////////////
@@ -153,8 +153,9 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 
 		let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/newdeveloper';
 		let res = 'unauthorized user';
-		await request( { url: hueurl, method: 'get', timeout: 5000 } )
-			.then( (body)=>{
+		await axios.get( hueurl, {timeout: 5000 } )
+			.then( (res)=>{
+				let body = res.data;
 				// console.log('----');
 				if( body[0].error ) {
 					// errorとはいえ，こちらが正規ルート = ユーザがいない，だからこれから登録処理という流れ
@@ -178,8 +179,9 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 			hueurl = 'http://' + Hue.bridge.ipaddress + '/api';
 			Hue.debugMode? console.log( '-- Hue.initialize, deviceType:', Hue.deviceType ):0;
 
-			await request({ url: hueurl, method: 'post', timeout: 5000, json: { devicetype: Hue.deviceType } })
-				.then( (body)=>{
+			await axios.post( hueurl, {timeout: 5000, json: { devicetype: Hue.deviceType }} )
+				.then( (res)=>{
+					let body = res.data;
 					if( body[0] && body[0].success ) {
 						Hue.debugMode? console.log( 'Hue.initialize, Link is succeeded.' ):0;
 						Hue.userKey = body[0].success.username;
@@ -203,7 +205,7 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 
 	if( Hue.autoGet == true ) {
 		Hue.autoGetStart();
-		Hue.getState( Hue.bridge.ipaddress );
+		Hue.getState();
 	}
 
 	Hue.gonnaInitialize = false;
@@ -217,14 +219,15 @@ Hue.initializeCancel = function() {
 }
 
 
-Hue.getState = function( ip ) {
+Hue.getState = function() {
 	// 状態取得
-	Hue.debugMode? console.log( 'Hue.getState() ip:', ip ):0;
+	Hue.debugMode? console.log( 'Hue.getState()' ):0;
 
 	let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/' + Hue.userKey + '/lights';
-	request({ url: hueurl, method: 'get', timeout: 5000 })
-		.then( (rep) => {
-			rep = Hue.objectSort(JSON.parse(rep));
+	axios.get( hueurl, { timeout: 5000 })
+		.then( (res) => {
+			let rep = res.data;
+			rep = Hue.objectSort(rep);
 
 			if( rep.error ) { // Linkしていない、keyが違うなど、受信エラー
 				Hue.userFunc(Hue.bridge.ipaddress, rep, rep.error.description );
@@ -239,25 +242,28 @@ Hue.getState = function( ip ) {
 };
 
 
-Hue.setState = function( ip, url, _json ) {
+Hue.setState = async function( url, bodyObj ) {
 	// 状態セット
-	Hue.debugMode? console.log( 'Hue.setState() ip:', ip, 'url:', url, 'json', _json ):0;
+	Hue.debugMode? console.log( 'Hue.setState() url:', url, 'bodyObj:', bodyObj ):0;
 
-	let json = "";  // jsonだっつってるのにobject入れてくる場合がある。
-	if( typeof _json != 'string' ) {
-		json = JSON.stringify(_json);
+	// 引数がObjectだっつってるのにobject入れてくる場合がある。
+	if( typeof bodyObj == 'string' ) {
+		bodyObj = JSON.parse(bodyObj);
 	}
 
 	let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/' + Hue.userKey + url;
-	request({ url: hueurl, method: 'put', headers:{"content-type":"application/json"},body: json, timeout: 5000 })
-		.then( (rep) => {
-			rep = Hue.objectSort(JSON.parse(rep));
-			Hue.userFunc( Hue.bridge.ipaddress, rep, null);
-		} ).catch( (err) => {
+	// axios.put( hueurl, bodyObj, { params:{headers:{"content-type":"application/json"}, timeout: 5000} })
+	const res = await axios.put( hueurl, bodyObj, { headers: {"Content-Type":"application/json"}, timeout: 5000} )
+		.catch( (err) => {
 			// Hue.userFunc( Hue.bridge.ipaddress, null, err);
 			console.error(err);
 			throw err;
 		} );
+
+	let rep = res.data;
+	console.log( rep );
+	rep = Hue.objectSort(rep);
+	Hue.userFunc( Hue.bridge.ipaddress, rep, null);
 };
 
 
@@ -275,7 +281,7 @@ Hue.autoGetStart = function () {
 
 	if( Hue.bridge.ipaddress ) { // IPがすでにないと例外になるので
 		Hue.autoGetEnabled = cron.schedule('*/3 * * * *', () => {  // 3分毎にautoget
-			Hue.getState( ip );
+			Hue.getState();
 		});
 
 		Hue.autoGetEnabled.start();

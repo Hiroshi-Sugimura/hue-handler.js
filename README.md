@@ -60,9 +60,9 @@ let Huereceived = function(rIP, response, error) {
 			console.log( JSON.stringify(Hue.facilities, null, '  ') );
 		});
 
-		Hue.setState( "192.168.10.110", "/lights/1/state", '{"on":true}' );  // ライトONの例
+		Hue.setState( "/lights/1/state", '{"on":true}' );  // ライトONの例
 		await Hue.sleep(3000);
-		Hue.setState( "192.168.10.110", "/lights/1/state", '{"on":false}' );  // ライトOFFの例
+		Hue.setState( "/lights/1/state", '{"on":false}' );  // ライトOFFの例
 	}
 
 })();
@@ -205,6 +205,8 @@ x Warranty
 
 - このモジュールで使用している、他モジュールとライセンスは下記のようになっています。このリストはlicense-chekerで作製しています。
 - Here is modules and license using this module. The list is extracted by license-checker function.
+	- このリストの更新は少し遅いので参考情報程度にしてください。
+	- The updating this list is very slow, you can not use to impotant information directly.
 
 ```
 license-checker --csv
@@ -282,6 +284,7 @@ license-checker --csv
 
 ## Log
 
+- 2.0.0 request-promise-nativeがdeprecatedになっているので、base moduleをaxiosに変更する。
 - 1.2.0 setStateのobject対応
 - 1.1.6 debug追加
 - 1.1.5 cancel条件のbug fix
