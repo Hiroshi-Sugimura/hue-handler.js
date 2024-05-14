@@ -177,13 +177,16 @@ Hue.initialize = async function ( userKey, userFunc, Options = { appName:'' ,dev
 			hueurl = 'http://' + Hue.bridge.ipaddress + '/api';
 			Hue.debugMode? console.log( '-- Hue.initialize, deviceType:', Hue.deviceType ):0;
 
-			await axios.post( hueurl, {timeout: 5000, json: { devicetype: Hue.deviceType }} )
+			// await axios.post( hueurl, {timeout: 5000, json: { devicetype: Hue.deviceType }} )
+			const reqjson = { devicetype: Hue.deviceType };
+			await axios.post( hueurl, reqjson )
 				.then( (res)=>{
 					let body = res.data;
 					if( body[0] && body[0].success ) {
 						Hue.debugMode? console.log( 'Hue.initialize, Link is succeeded.' ):0;
 						Hue.userKey = body[0].success.username;
 					}else{
+						// console.log(body);
 						Hue.userFunc( Hue.bridge.ipaddress, 'Linking', null );
 						// if( Hue.debugMode == true ) {
 						// console.log('Please push Link button.');
