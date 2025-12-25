@@ -111,6 +111,7 @@ Hue.dummy = function () {
  * @param {string} [Options.deviceName=hostname] デバイス名
  * @param {string} [Options.userName='sugilab'] ユーザー名
  * @param {boolean} [Options.debugMode=false] デバッグモード有効化
+ * @param {string} [Options.bridgeIp] ブリッジのIP指定（指定時は自動検索スキップ）
  * @returns {Promise<string>} 取得または確認されたUserKey
  */
 Hue.initialize = async function (userKey, userFunc, Options = { appName: '', deviceName: '', userName: '', debugMode: false }) {
@@ -235,7 +236,7 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 		Hue.debugMode ? console.log('Hue.initialize, use userKey: ', Hue.userKey) : 0;
 	}
 
-	Hue.getState();
+	await Hue.getState();
 
 	Hue.gonnaInitialize = false;  // 初期化中フラグ、初期化中キャンセルに利用
 	return Hue.userKey;
