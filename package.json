@@ -10,7 +10,7 @@
 		"uuid": "^13.0.0"
 	},
 	"scripts": {
-		"test": "mocha"
+		"test": "mocha test/test_unit.js && mocha test/test_integration.js"
 	},
 	"repository": {
 		"type": "git",
