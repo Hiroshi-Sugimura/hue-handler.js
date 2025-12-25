@@ -131,13 +131,7 @@ Hue.objectSort = function (obj) {
  * @throws {Error} 検索エラー時
  */
 Hue.searchBridge = async function (timeout) {
-	let results;
-	try {
-		results = await v3.discovery.upnpSearch(timeout);
-	} catch (e) {
-		throw e;
-	}
-	return results;
+	return await v3.discovery.upnpSearch(timeout);
 }
 
 /**
@@ -165,7 +159,7 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 
 	// 二重初期化起動の禁止（初期化は何回やってもよいが、初期化中だけは初期化を受け付けない）
 	if (Hue.gonnaInitialize) {
-		Hue.debugMode ? console.log('-- Hue.initialize, prohibit double initialize (hue-hundler.js) ') : 0;
+		if (Hue.debugMode) console.log('-- Hue.initialize, prohibit double initialize (hue-hundler.js) ');
 		return Hue.userKey;
 	}
 	Hue.gonnaInitialize = true;
@@ -184,15 +178,21 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 	Hue.canceled = false; // 初期化のキャンセルシグナル
 	Hue.retryRemain = 3;  // リトライ回数
 
-	Hue.debugMode ? console.log('==== hue-hundler.js ====') : 0;
-	Hue.debugMode ? console.log('userKey:', Hue.userKey) : 0;
-	Hue.debugMode ? console.log('deviceType:', Hue.deviceType) : 0;
-	Hue.debugMode ? console.log('debugMode:', Hue.debugMode) : 0;
-	Hue.debugMode ? console.log('-- Hue.initialize, getBridge') : 0;
+	if (Hue.debugMode) console.log('==== hue-hundler.js ====');
+	if (Hue.debugMode) console.log('userKey:', Hue.userKey);
+	if (Hue.debugMode) console.log('deviceType:', Hue.deviceType);
+	if (Hue.debugMode) console.log('debugMode:', Hue.debugMode);
+	if (Hue.debugMode) console.log('-- Hue.initialize, getBridge');
 
 	//==========================================================================
 	// ブリッジの発見
 	let bridges = [];
+	if (Options.bridgeIp) {
+		if (Hue.debugMode) console.log('-- Hue.initialize, use bridgeIp:', Options.bridgeIp);
+		bridges = [{ ipaddress: Options.bridgeIp }];
+		Hue.bridge = bridges[0];
+	}
+
 	while (bridges.length == 0) {
 		try {
 			if (Hue.canceled) { // 初期化のキャンセルシグナルが来たので終わる
@@ -204,8 +204,9 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 			bridges = await Hue.searchBridge(20000); // 20 second timeout
 			if (bridges.length == 0) {
 				// 失敗した
-				Hue.userFunc(null, null, "Can't find bride.");
-				if (Hue.retryRemain -= 1 == 0) { return Hue.userKey; } // リトライ限界が来たのでkey無しで返却
+				Hue.userFunc(null, null, "Can't find bridge.");
+				Hue.retryRemain -= 1;
+				if (Hue.retryRemain === 0) { return Hue.userKey; } // リトライ限界が来たのでkey無しで返却
 			}
 		} catch (e) {
 			Hue.gonnaInitialize = false;
@@ -215,12 +216,12 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 	Hue.retryRemain = 3;  // リトライ回数復帰
 	Hue.bridge = bridges[0];  // 一つしか管理しない
 
-	Hue.debugMode ? console.log('-- Hue.initialize, connect:', Hue.bridge.ipaddress) : 0;
+	if (Hue.debugMode) console.log('-- Hue.initialize, connect:', Hue.bridge.ipaddress);
 
 	//==========================================================================
 	// Link
 	if (Hue.userKey === '') {  // 新規Link
-		Hue.debugMode ? console.log('-- Hue.initialize, new userKey and authorize.') : 0;
+		if (Hue.debugMode) console.log('-- Hue.initialize, new userKey and authorize.');
 
 		if (Hue.canceled) { // 初期化のキャンセルシグナルが来たので終わる
 			Hue.userFunc(Hue.bridge.ipaddress, 'Canceled', null);
@@ -230,22 +231,22 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 
 		let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/newdeveloper';
 		let res = 'unauthorized user';
-		await axios.get(hueurl, { timeout: 5000 })
-			.then((res) => {
-				let body = res.data;
-				// console.log('----');
-				if (body[0].error) {
-					// errorとはいえ，こちらが正規ルート = ユーザがいない，だからこれから登録処理という流れ
-				} else {
-					res = body[0].description;
-				}
-			}).catch((err) => {
-				console.error(err);
-				Hue.gonnaInitialize = false;
-				throw err;
-			});
+		try {
+			const resData = await axios.get(hueurl, { timeout: 5000 });
+			let body = resData.data;
+			// console.log('----');
+			if (body[0].error) {
+				// errorとはいえ，こちらが正規ルート = ユーザがいない，だからこれから登録処理という流れ
+			} else {
+				res = body[0].description;
+			}
+		} catch (err) {
+			console.error(err);
+			Hue.gonnaInitialize = false;
+			throw err;
+		}
 
-		Hue.debugMode ? console.log('-- Hue.initialize, get Hue.userKey') : 0;
+		if (Hue.debugMode) console.log('-- Hue.initialize, get Hue.userKey');
 		while (Hue.userKey == '' &amp;&amp; Hue.canceled == false) {  // keyを獲得するか、ユーザーがキャンセルするまで無限に実行
 			if (Hue.canceled) { // 初期化のキャンセルシグナルが来たので終わる
 				Hue.userFunc(Hue.bridge.ipaddress, 'Canceled', null);
@@ -254,28 +255,28 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 			}
 
 			hueurl = 'http://' + Hue.bridge.ipaddress + '/api';
-			Hue.debugMode ? console.log('-- Hue.initialize, deviceType:', Hue.deviceType) : 0;
+			if (Hue.debugMode) console.log('-- Hue.initialize, deviceType:', Hue.deviceType);
 
 			// await axios.post( hueurl, {timeout: 5000, json: { devicetype: Hue.deviceType }} )
 			const reqjson = { devicetype: Hue.deviceType };
-			await axios.post(hueurl, reqjson)
-				.then((res) => {
-					let body = res.data;
-					if (body[0] &amp;&amp; body[0].success) {
-						Hue.debugMode ? console.log('Hue.initialize, Link is succeeded.') : 0;
-						Hue.userKey = body[0].success.username;
-					} else {
-						// console.log(body);
-						Hue.userFunc(Hue.bridge.ipaddress, 'Linking', null);
-						// if( Hue.debugMode == true ) {
-						// console.log('Please push Link button.');
-						// }
-					}
-				}).catch((err) => {
-					console.error(err);
-					Hue.gonnaInitialize = false;
-					throw err;
-				});
+			try {
+				const resData = await axios.post(hueurl, reqjson);
+				let body = resData.data;
+				if (body[0] &amp;&amp; body[0].success) {
+					if (Hue.debugMode) console.log('Hue.initialize, Link is succeeded.');
+					Hue.userKey = body[0].success.username;
+				} else {
+					// console.log(body);
+					Hue.userFunc(Hue.bridge.ipaddress, 'Linking', null);
+					// if( Hue.debugMode == true ) {
+					// console.log('Please push Link button.');
+					// }
+				}
+			} catch (err) {
+				console.error(err);
+				Hue.gonnaInitialize = false;
+				throw err;
+			}
 			await Hue.sleep(5 * 1000); // 5秒待つ
 		}
 
@@ -295,7 +296,7 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
  * @memberof Hue
  */
 Hue.initializeCancel = function () {
-	Hue.debugMode ? console.log('Hue.initializeCancel(). Please wait.') : 0;
+	if (Hue.debugMode) console.log('Hue.initializeCancel(). Please wait.');
 	Hue.canceled = true;
 };
 
@@ -307,24 +308,24 @@ Hue.initializeCancel = function () {
  */
 Hue.getState = async function () {
 	// 状態取得
-	Hue.debugMode ? console.log('Hue.getState()') : 0;
+	if (Hue.debugMode) console.log('Hue.getState()');
 
 	let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/' + Hue.userKey + '/lights';
-	await axios.get(hueurl, { timeout: 5000 })
-		.then((res) => {
-			let rep = res.data;
-			rep = Hue.objectSort(rep);
+	try {
+		const res = await axios.get(hueurl, { timeout: 5000 });
+		let rep = res.data;
+		rep = Hue.objectSort(rep);
 
-			if (rep.error) {  // Linkしていない、keyが違うなど、受信エラー
-				Hue.userFunc(Hue.bridge.ipaddress, rep, rep.error.description);
-			} else {
-				Hue.facilities[Hue.bridge.ipaddress] = { bridge: Hue.bridge, devices: rep };
-				Hue.userFunc(Hue.bridge.ipaddress, rep, null);
-			}
-		}).catch((err) => {
-			// Hue.userFunc( Hue.bridge.ipaddress, null, err);
-			throw err;
-		});
+		if (rep.error) {  // Linkしていない、keyが違うなど、受信エラー
+			Hue.userFunc(Hue.bridge.ipaddress, rep, rep.error.description);
+		} else {
+			Hue.facilities[Hue.bridge.ipaddress] = { bridge: Hue.bridge, devices: rep };
+			Hue.userFunc(Hue.bridge.ipaddress, rep, null);
+		}
+	} catch (err) {
+		// Hue.userFunc( Hue.bridge.ipaddress, null, err);
+		throw err;
+	}
 };
 
 
@@ -337,7 +338,7 @@ Hue.getState = async function () {
  */
 Hue.setState = async function (url, bodyObj) {
 	// 状態セット
-	Hue.debugMode ? console.log('Hue.setState() url:', url, 'bodyObj:', bodyObj) : 0;
+	if (Hue.debugMode) console.log('Hue.setState() url:', url, 'bodyObj:', bodyObj);
 
 	// 引数がObjectだっつってるのにobject入れてくる場合がある。
 	if (typeof bodyObj == 'string') {
@@ -345,15 +346,17 @@ Hue.setState = async function (url, bodyObj) {
 	}
 
 	let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/' + Hue.userKey + url;
-	const res = await axios.put(hueurl, bodyObj, { headers: { "Content-Type": "application/json" }, timeout: 5000 })
-		.catch((err) => {
-			// Hue.userFunc( Hue.bridge.ipaddress, null, err);
-			// console.error(err);
-			throw err;
-		});
+	let rep;
+	try {
+		const res = await axios.put(hueurl, bodyObj, { headers: { "Content-Type": "application/json" }, timeout: 5000 });
+		rep = res.data;
+	} catch (err) {
+		// Hue.userFunc( Hue.bridge.ipaddress, null, err);
+		// console.error(err);
+		throw err;
+	}
 
-	let rep = res.data;
-	Hue.debugMode ? console.log('Hue.setState() rep:', rep) : 0;
+	if (Hue.debugMode) console.log('Hue.setState() rep:', rep);
 	rep = Hue.objectSort(rep);
 	Hue.userFunc(Hue.bridge.ipaddress, rep, null);
 };
@@ -377,7 +380,7 @@ module.exports = Hue;
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Thu Dec 25 2025 04:40:49 GMT+0000 (Coordinated Universal Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Thu Dec 25 2025 05:15:20 GMT+0000 (Coordinated Universal Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>
