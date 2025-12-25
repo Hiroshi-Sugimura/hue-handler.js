@@ -6,7 +6,14 @@
 const v3 = require('node-hue-api').v3;
 const axios = require('axios');
 const os = require('os');
-const cron = require('node-cron');
+
+
+// Default constants
+const DEFAULT_REQUEST_TIMEOUT = 5000;
+const DEFAULT_SEARCH_TIMEOUT = 20000;
+const DEFAULT_RETRY_COUNT = 3;
+const DEFAULT_POLL_INTERVAL = 5000;
+
 
 //////////////////////////////////////////////////////////////////////
 /**
@@ -22,6 +29,12 @@ let Hue = {
 	deviceType: '', // = appName + '#' + deviceName + ' ' + userName,
 	userKey: '',  // default
 	userFunc: {},  // callback function
+	config: {
+		requestTimeout: DEFAULT_REQUEST_TIMEOUT,
+		searchTimeout: DEFAULT_SEARCH_TIMEOUT,
+		maxRetries: DEFAULT_RETRY_COUNT,
+		pollInterval: DEFAULT_POLL_INTERVAL
+	},
 
 	// private
 	bridge: {},
@@ -106,9 +119,13 @@ Hue.dummy = function () {
  * @param {string} [Options.userName='sugilab'] ユーザー名
  * @param {boolean} [Options.debugMode=false] デバッグモード有効化
  * @param {string} [Options.bridgeIp] ブリッジのIP指定（指定時は自動検索スキップ）
+ * @param {number} [Options.requestTimeout=5000] HTTPリクエストタイムアウト(ms)
+ * @param {number} [Options.searchTimeout=20000] ブリッジ検索タイムアウト(ms)
+ * @param {number} [Options.maxRetries=3] ブリッジ検索リトライ回数
+ * @param {number} [Options.pollInterval=5000] Linkボタン監視等のポーリング間隔(ms)
  * @returns {Promise<string>} 取得または確認されたUserKey
  */
-Hue.initialize = async function (userKey, userFunc, Options = { appName: '', deviceName: '', userName: '', debugMode: false }) {
+Hue.initialize = async function (userKey, userFunc, Options = {}) {
 
 	// 二重初期化起動の禁止（初期化は何回やってもよいが、初期化中だけは初期化を受け付けない）
 	if (Hue.gonnaInitialize) {
@@ -126,15 +143,22 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 	Hue.deviceName = Options.deviceName == undefined || Options.deviceName === '' ? os.hostname() : Options.deviceName;
 	Hue.userName = Options.userName == undefined || Options.userName === '' ? 'sugilab' : Options.userName;
 
+	// Config options
+	Hue.config.requestTimeout = Options.requestTimeout || DEFAULT_REQUEST_TIMEOUT;
+	Hue.config.searchTimeout = Options.searchTimeout || DEFAULT_SEARCH_TIMEOUT;
+	Hue.config.maxRetries = Options.maxRetries || DEFAULT_RETRY_COUNT;
+	Hue.config.pollInterval = Options.pollInterval || DEFAULT_POLL_INTERVAL;
+
 	Hue.deviceType = Hue.appName + '#' + Hue.deviceName + ' ' + Hue.userName;
 
 	Hue.canceled = false; // 初期化のキャンセルシグナル
-	Hue.retryRemain = 3;  // リトライ回数
+	Hue.retryRemain = Hue.config.maxRetries;  // リトライ回数
 
 	if (Hue.debugMode) console.log('==== hue-hundler.js ====');
 	if (Hue.debugMode) console.log('userKey:', Hue.userKey);
 	if (Hue.debugMode) console.log('deviceType:', Hue.deviceType);
 	if (Hue.debugMode) console.log('debugMode:', Hue.debugMode);
+	if (Hue.debugMode) console.log('config:', Hue.config);
 	if (Hue.debugMode) console.log('-- Hue.initialize, getBridge');
 
 	//==========================================================================
@@ -154,7 +178,7 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 				return Hue.userKey; // cancelの時はkeyを何も返さない
 			}
 
-			bridges = await Hue.searchBridge(20000); // 20 second timeout
+			bridges = await Hue.searchBridge(Hue.config.searchTimeout); // timeout from config
 			if (bridges.length == 0) {
 				// 失敗した
 				Hue.userFunc(null, null, "Can't find bridge.");
@@ -170,7 +194,7 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 			// エラーでもリトライする (gonnaInitializeはfalseにしない)
 		}
 	}
-	Hue.retryRemain = 3;  // リトライ回数復帰
+	Hue.retryRemain = Hue.config.maxRetries;  // リトライ回数復帰
 	Hue.bridge = bridges[0];  // 一つしか管理しない
 
 	if (Hue.debugMode) console.log('-- Hue.initialize, connect:', Hue.bridge.ipaddress);
@@ -189,7 +213,7 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 		let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/newdeveloper';
 		let res = 'unauthorized user';
 		try {
-			const resData = await axios.get(hueurl, { timeout: 5000 });
+			const resData = await axios.get(hueurl, { timeout: Hue.config.requestTimeout });
 			let body = resData.data;
 			// console.log('----');
 			if (body[0].error) {
@@ -217,7 +241,7 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 			// await axios.post( hueurl, {timeout: 5000, json: { devicetype: Hue.deviceType }} )
 			const reqjson = { devicetype: Hue.deviceType };
 			try {
-				const resData = await axios.post(hueurl, reqjson);
+				const resData = await axios.post(hueurl, reqjson, { timeout: Hue.config.requestTimeout });
 				let body = resData.data;
 				if (body[0] && body[0].success) {
 					if (Hue.debugMode) console.log('Hue.initialize, Link is succeeded.');
@@ -237,7 +261,7 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 				}
 				// エラーでもリトライする
 			}
-			await Hue.sleep(5 * 1000); // 5秒待つ
+			await Hue.sleep(Hue.config.pollInterval); // 待機
 		}
 
 	} else {
@@ -272,7 +296,7 @@ Hue.getState = async function () {
 
 	let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/' + Hue.userKey + '/lights';
 	try {
-		const res = await axios.get(hueurl, { timeout: 5000 });
+		const res = await axios.get(hueurl, { timeout: Hue.config.requestTimeout });
 		let rep = res.data;
 		rep = Hue.objectSort(rep);
 
@@ -308,7 +332,7 @@ Hue.setState = async function (url, bodyObj) {
 	let hueurl = 'http://' + Hue.bridge.ipaddress + '/api/' + Hue.userKey + url;
 	let rep;
 	try {
-		const res = await axios.put(hueurl, bodyObj, { headers: { "Content-Type": "application/json" }, timeout: 5000 });
+		const res = await axios.put(hueurl, bodyObj, { headers: { "Content-Type": "application/json" }, timeout: Hue.config.requestTimeout });
 		rep = res.data;
 	} catch (err) {
 		// Hue.userFunc( Hue.bridge.ipaddress, null, err);
