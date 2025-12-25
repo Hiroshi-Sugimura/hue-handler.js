@@ -53,5 +53,23 @@ describe('Hue Handler Unit Tests', function () {
         // Note: More complex tests for initialize would require mocking external dependencies
         // like v3.discovery.upnpSearch or axios, which are internal to index.js.
         // We test basic logic here.
+
+        it('should use provided bridgeIp and skip discovery', async function () {
+            this.timeout(10000); // Allow for axios timeout
+            const searchSpy = sandbox.spy(Hue, 'searchBridge');
+
+            // Use a fake IP that will likely cause axios error, but checking discovery skip is the goal
+            try {
+                await Hue.initialize('dummyKey', () => { }, { bridgeIp: '127.0.0.1', debugMode: true });
+            } catch (e) {
+                // Expected error due to connection failure to dummy IP
+            }
+
+            // Verify searchBridge was NOT called
+            expect(searchSpy.called).to.be.false;
+
+            // Verify bridge IP was set
+            expect(Hue.bridge.ipaddress).to.equal('127.0.0.1');
+        });
     });
 });

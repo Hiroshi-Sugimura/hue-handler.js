@@ -140,6 +140,12 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 	//==========================================================================
 	// ブリッジの発見
 	let bridges = [];
+	if (Options.bridgeIp) {
+		if (Hue.debugMode) console.log('-- Hue.initialize, use bridgeIp:', Options.bridgeIp);
+		bridges = [{ ipaddress: Options.bridgeIp }];
+		Hue.bridge = bridges[0];
+	}
+
 	while (bridges.length == 0) {
 		try {
 			if (Hue.canceled) { // 初期化のキャンセルシグナルが来たので終わる
