@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Home</h1>
+
+    
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><h1>Overview</h1>
+<p>hue-handler</p>
+<h1>Install</h1>
+<p>下記コマンドでモジュールをインストールできます．</p>
+<p>You can install the module as following command.</p>
+<pre class="prettyprint source lang-bash"><code>npm i hue-handler
+</code></pre>
+<h1>Demo, example</h1>
+<pre class="prettyprint source"><code>const Hue = require('hue-handler');
+
+////////////////////////////////////////
+// test config
+let hueKey = '';  // 分かっている場合はここに記述，初めての時は空文字でよい
+
+
+// Hue受信後の処理
+let Huereceived = function(rIP, response, error) {
+
+	console.log('-- recenved');
+
+	if( error ) {
+		console.error( 'Error:', error );
+		return;
+	}
+
+	if( response == 'Linking' ) {
+		console.log('Please push Link button.');
+	}else{
+		console.dir(rIP);
+		console.dir(response);
+		console.dir(error);
+	}
+};
+
+
+( async ()=> {
+	try{
+		hueKey = await Hue.initialize( hueKey, Huereceived, {debugMode: false} );
+	}catch(e){
+		hueKey = '';
+		console.error('initialize error.');
+		console.dir(e);
+	}
+
+	if( hueKey != '' ) {  // 接続成功
+		// Hue.facilitiesの定期的監視
+		Hue.setObserveFacilities( 3000, () => {
+			console.log('-- Observe Facilities');
+			console.log( JSON.stringify(Hue.facilities, null, '  ') );
+		});
+
+		Hue.setState( &quot;/lights/1/state&quot;, '{&quot;on&quot;:true}' );  // ライトONの例
+		await Hue.sleep(3000);
+		Hue.setState( &quot;/lights/1/state&quot;, '{&quot;on&quot;:false}' );  // ライトOFFの例
+	}
+
+})();
+</code></pre>
+<h1>Data stracture</h1>
+<p>Hue.facilities is following stracture.</p>
+<pre class="prettyprint source"><code>{
+  '192.168.2.192': {
+    bridge: {
+      name: 'Philips hue (192.168.2.192)',
+      manufacturer: 'Royal Philips Electronics',
+      ipaddress: '192.168.2.192',
+      model: [Object],
+      version: [Object],
+      icons: [Array]
+    },
+    devices: {
+      '1': [Object],
+      '3': [Object],
+      '4': [Object],
+      '6': [Object],
+      '7': [Object],
+      '8': [Object],
+      '9': [Object],
+      '10': [Object]
+    }
+  }
+}
+</code></pre>
+<h1>API</h1>
+<h2>初期化と受信, 監視, initialize, receriver callback and observation</h2>
+<ul>
+<li>初期化: Hue.initialize( key = '', callback, debugmode = {debugMode: false} );</li>
+</ul>
+<pre class="prettyprint source"><code>// Hue受信後の処理
+let Huereceived = function(gwIP, response, error) {
+
+	console.log('-- recenved');
+
+	if( error ) {
+		console.error( error );
+		return;
+	}
+
+	switch( response ) {  // レスポンスを処理
+		case 'Linking':
+		console.log('Please push Link button.');
+		break;
+
+		case 'Canceled':
+		console.log('Please push Link button.');
+		break;
+
+		default:
+		console.log('gwIP:', gwIP);
+		console.log('res:', response);
+	}
+};
+
+
+// Hue.initialize( hueKey, Huereceived );
+hueKey = Hue.initialize( hueKey, Huereceived, {debugMode: true} );
+</code></pre>
+<ul>
+<li>初期化中のキャンセル</li>
+</ul>
+<pre class="prettyprint source"><code>Hue.initializeCancel();
+</code></pre>
+<ul>
+<li>監視: Hue.setObserveFacilities( interval, callback )</li>
+</ul>
+<pre class="prettyprint source"><code>// Hue.facilitiesの定期的監視
+Hue.setObserveFacilities( 3000, () => {
+	console.dir( Hue.facilities );
+});
+</code></pre>
+<h1>Knowhow</h1>
+<pre class="prettyprint source"><code>{
+  '1': {
+    state: {
+      on: false,
+      bri: 254,
+      hue: 65104,
+      sat: 253,
+      effect: 'none',
+      xy: [Array],
+      ct: 153,
+      alert: 'none',
+      colormode: 'xy',
+      reachable: true
+    },
+    type: 'Extended color light',
+    name: 'Hue Lamp',
+    modelid: 'LCT001',
+    manufacturername: 'Philips',
+    uniqueid: '00:17:88:01:00:e1:0d:0b-0b',
+    swversion: '5.127.1.26581'
+  },
+</code></pre>
+<h1>meta data</h1>
+<h2>Authors</h2>
+<p>神奈川工科大学  創造工学部  ホームエレクトロニクス開発学科; Dept. of Home Electronics, Faculty of Creative Engineering, Kanagawa Institute of Technology</p>
+<p>杉村　博; SUGIMURA, Hiroshi</p>
+<h2>License</h2>
+<p>MIT License</p>
+<pre class="prettyprint source"><code>-- License summary --
+o Commercial use
+o Modification
+o Distribution
+o Private use
+x Liability
+x Warranty
+</code></pre>
+<h2>Using other modules and License</h2>
+<ul>
+<li>このモジュールで使用している、他モジュールとライセンスは下記のようになっています。このリストはlicense-chekerで作製しています。</li>
+<li>Here is modules and license using this module. The list is extracted by license-checker function.
+<ul>
+<li>このリストの更新は少し遅いので参考情報程度にしてください。</li>
+<li>The updating this list is very slow, you can not use to impotant information directly.</li>
+</ul>
+</li>
+</ul>
+<pre class="prettyprint source"><code>license-checker --csv
+</code></pre>
+<ul>
+<li>List</li>
+</ul>
+<pre class="prettyprint source"><code>&quot;ajv@6.12.4&quot;,&quot;MIT&quot;,&quot;https://github.com/ajv-validator/ajv&quot;
+&quot;asn1@0.2.4&quot;,&quot;MIT&quot;,&quot;https://github.com/joyent/node-asn1&quot;
+&quot;assert-plus@1.0.0&quot;,&quot;MIT&quot;,&quot;https://github.com/mcavage/node-assert-plus&quot;
+&quot;asynckit@0.4.0&quot;,&quot;MIT&quot;,&quot;https://github.com/alexindigo/asynckit&quot;
+&quot;aws-sign2@0.7.0&quot;,&quot;Apache-2.0&quot;,&quot;https://github.com/mikeal/aws-sign&quot;
+&quot;aws4@1.10.1&quot;,&quot;MIT&quot;,&quot;https://github.com/mhart/aws4&quot;
+&quot;axios@0.21.4&quot;,&quot;MIT&quot;,&quot;https://github.com/axios/axios&quot;
+&quot;bcrypt-pbkdf@1.0.2&quot;,&quot;BSD-3-Clause&quot;,&quot;https://github.com/joyent/node-bcrypt-pbkdf&quot;
+&quot;bottleneck@2.19.5&quot;,&quot;MIT&quot;,&quot;https://github.com/SGrondin/bottleneck&quot;
+&quot;caseless@0.12.0&quot;,&quot;Apache-2.0&quot;,&quot;https://github.com/mikeal/caseless&quot;
+&quot;combined-stream@1.0.8&quot;,&quot;MIT&quot;,&quot;https://github.com/felixge/node-combined-stream&quot;
+&quot;core-util-is@1.0.2&quot;,&quot;MIT&quot;,&quot;https://github.com/isaacs/core-util-is&quot;
+&quot;dashdash@1.14.1&quot;,&quot;MIT&quot;,&quot;https://github.com/trentm/node-dashdash&quot;
+&quot;delayed-stream@1.0.0&quot;,&quot;MIT&quot;,&quot;https://github.com/felixge/node-delayed-stream&quot;
+&quot;ecc-jsbn@0.1.2&quot;,&quot;MIT&quot;,&quot;https://github.com/quartzjer/ecc-jsbn&quot;
+&quot;extend@3.0.2&quot;,&quot;MIT&quot;,&quot;https://github.com/justmoon/node-extend&quot;
+&quot;extsprintf@1.3.0&quot;,&quot;MIT&quot;,&quot;https://github.com/davepacheco/node-extsprintf&quot;
+&quot;fast-deep-equal@3.1.3&quot;,&quot;MIT&quot;,&quot;https://github.com/epoberezkin/fast-deep-equal&quot;
+&quot;fast-json-stable-stringify@2.1.0&quot;,&quot;MIT&quot;,&quot;https://github.com/epoberezkin/fast-json-stable-stringify&quot;
+&quot;follow-redirects@1.15.1&quot;,&quot;MIT&quot;,&quot;https://github.com/follow-redirects/follow-redirects&quot;
+&quot;forever-agent@0.6.1&quot;,&quot;Apache-2.0&quot;,&quot;https://github.com/mikeal/forever-agent&quot;
+&quot;form-data@2.3.3&quot;,&quot;MIT&quot;,&quot;https://github.com/form-data/form-data&quot;
+&quot;get-ssl-certificate@2.3.3&quot;,&quot;MIT&quot;,&quot;https://github.com/johncrisostomo/get-ssl-certificate&quot;
+&quot;getpass@0.1.7&quot;,&quot;MIT&quot;,&quot;https://github.com/arekinath/node-getpass&quot;
+&quot;har-schema@2.0.0&quot;,&quot;ISC&quot;,&quot;https://github.com/ahmadnassri/har-schema&quot;
+&quot;har-validator@5.1.5&quot;,&quot;MIT&quot;,&quot;https://github.com/ahmadnassri/node-har-validator&quot;
+&quot;http-signature@1.2.0&quot;,&quot;MIT&quot;,&quot;https://github.com/joyent/node-http-signature&quot;
+&quot;hue-handler@1.1.0&quot;,&quot;MIT&quot;,&quot;https://github.com/Hiroshi-Sugimura/hue-handler.js&quot;
+&quot;is-typedarray@1.0.0&quot;,&quot;MIT&quot;,&quot;https://github.com/hughsk/is-typedarray&quot;
+&quot;isstream@0.1.2&quot;,&quot;MIT&quot;,&quot;https://github.com/rvagg/isstream&quot;
+&quot;jsbn@0.1.1&quot;,&quot;MIT&quot;,&quot;https://github.com/andyperlitch/jsbn&quot;
+&quot;json-schema-traverse@0.4.1&quot;,&quot;MIT&quot;,&quot;https://github.com/epoberezkin/json-schema-traverse&quot;
+&quot;json-schema@0.2.3&quot;,&quot;AFLv2.1,BSD&quot;,&quot;https://github.com/kriszyp/json-schema&quot;
+&quot;json-stringify-safe@5.0.1&quot;,&quot;ISC&quot;,&quot;https://github.com/isaacs/json-stringify-safe&quot;
+&quot;jsprim@1.4.1&quot;,&quot;MIT&quot;,&quot;https://github.com/joyent/node-jsprim&quot;
+&quot;lodash@4.17.20&quot;,&quot;MIT&quot;,&quot;https://github.com/lodash/lodash&quot;
+&quot;mime-db@1.44.0&quot;,&quot;MIT&quot;,&quot;https://github.com/jshttp/mime-db&quot;
+&quot;mime-types@2.1.27&quot;,&quot;MIT&quot;,&quot;https://github.com/jshttp/mime-types&quot;
+&quot;node-cron@3.0.1&quot;,&quot;ISC&quot;,&quot;https://github.com/merencia/node-cron&quot;
+&quot;node-hue-api@4.0.11&quot;,&quot;Apache-2.0&quot;,&quot;https://github.com/peter-murray/node-hue-api&quot;
+&quot;oauth-sign@0.9.0&quot;,&quot;Apache-2.0&quot;,&quot;https://github.com/mikeal/oauth-sign&quot;
+&quot;performance-now@2.1.0&quot;,&quot;MIT&quot;,&quot;https://github.com/braveg1rl/performance-now&quot;
+&quot;psl@1.8.0&quot;,&quot;MIT&quot;,&quot;https://github.com/lupomontero/psl&quot;
+&quot;punycode@2.1.1&quot;,&quot;MIT&quot;,&quot;https://github.com/bestiejs/punycode.js&quot;
+&quot;qs@6.5.2&quot;,&quot;BSD-3-Clause&quot;,&quot;https://github.com/ljharb/qs&quot;
+&quot;request-promise-core@1.1.4&quot;,&quot;ISC&quot;,&quot;https://github.com/request/promise-core&quot;
+&quot;request-promise-native@1.0.9&quot;,&quot;ISC&quot;,&quot;https://github.com/request/request-promise-native&quot;
+&quot;request@2.88.2&quot;,&quot;Apache-2.0&quot;,&quot;https://github.com/request/request&quot;
+&quot;safe-buffer@5.2.1&quot;,&quot;MIT&quot;,&quot;https://github.com/feross/safe-buffer&quot;
+&quot;safer-buffer@2.1.2&quot;,&quot;MIT&quot;,&quot;https://github.com/ChALkeR/safer-buffer&quot;
+&quot;sshpk@1.16.1&quot;,&quot;MIT&quot;,&quot;https://github.com/joyent/node-sshpk&quot;
+&quot;stealthy-require@1.1.1&quot;,&quot;ISC&quot;,&quot;https://github.com/analog-nico/stealthy-require&quot;
+&quot;tough-cookie@2.5.0&quot;,&quot;BSD-3-Clause&quot;,&quot;https://github.com/salesforce/tough-cookie&quot;
+&quot;tunnel-agent@0.6.0&quot;,&quot;Apache-2.0&quot;,&quot;https://github.com/mikeal/tunnel-agent&quot;
+&quot;tweetnacl@0.14.5&quot;,&quot;Unlicense&quot;,&quot;https://github.com/dchest/tweetnacl-js&quot;
+&quot;uri-js@4.4.0&quot;,&quot;BSD-2-Clause&quot;,&quot;https://github.com/garycourt/uri-js&quot;
+&quot;uuid@3.4.0&quot;,&quot;MIT&quot;,&quot;https://github.com/uuidjs/uuid&quot;
+&quot;verror@1.10.0&quot;,&quot;MIT&quot;,&quot;https://github.com/davepacheco/node-verror&quot;
+</code></pre>
+<ul>
+<li>Apache-2.0 License is Here. (https://www.apache.org/licenses/LICENSE-2.0)</li>
+<li>ISC License is Here. (https://opensource.org/licenses/ISC)</li>
+<li>MIT License is Here. (https://opensource.org/licenses/mit-license.php)</li>
+<li>BSD-3-Clause is Here. (https://opensource.org/licenses/BSD-3-Clause)</li>
+<li>AFLv2.1 is Here. (https://spdx.org/licenses/AFL-2.1.html)</li>
+</ul>
+<h2>Log</h2>
+<ul>
+<li>2.2.0 test追加、jsdoc追加、安定化</li>
+<li>2.1.1 Linking bug fix</li>
+<li>2.1.0 定期的な監視いらないので消した</li>
+<li>2.0.2 いらないdebugログをとった</li>
+<li>2.0.1 監視を１分毎にした。そのうちカスタムできるようにする。</li>
+<li>2.0.0 request-promise-nativeがdeprecatedになっているので、base moduleをaxiosに変更する。</li>
+<li>1.2.0 setStateのobject対応</li>
+<li>1.1.6 debug追加</li>
+<li>1.1.5 cancel条件のbug fix</li>
+<li>1.1.4 cancelタイミングを増やした</li>
+<li>1.1.3 二重禁止の時の戻り値を申請したhueKyeを返却することとした</li>
+<li>1.1.2 cancelのときのinitializeの戻り値は''とした</li>
+<li>1.1.1 initialize中initializeを禁止</li>
+<li>1.1.0 監視をnode-cronにした、cancel機能追加</li>
+<li>1.0.0 失敗時のリトライ処理，async/await調整，</li>
+<li>0.2.2 setStatus</li>
+<li>0.2.1 manage errors</li>
+<li>0.2.0 renew stracture</li>
+<li>0.1.0 first published</li>
+<li>0.0.1 start up</li>
+</ul></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Hue.html">Hue</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Dec 25 2025 12:49:20 GMT+0900 (日本標準時)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

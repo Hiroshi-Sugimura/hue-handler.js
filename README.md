@@ -284,6 +284,7 @@ license-checker --csv
 
 ## Log
 
+- 2.2.0 test追加、jsdoc追加、安定化
 - 2.1.1 Linking bug fix
 - 2.1.0 定期的な監視いらないので消した
 - 2.0.2 いらないdebugログをとった
