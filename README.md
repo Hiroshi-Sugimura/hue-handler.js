@@ -13,6 +13,10 @@ You can install the module as following command.
 npm i hue-handler
 ```
 
+# manual
+
+https://hiroshi-sugimura.github.io/hue-handler.js/
+
 
 # Demo, example
 
