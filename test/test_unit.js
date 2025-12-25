@@ -5,42 +5,46 @@ const sinon = require('sinon');
 const Hue = require('../index.js');
 const expect = chai.expect;
 
-describe('Hue Handler Unit Tests', function() {
+describe('Hue Handler Unit Tests', function () {
     let sandbox;
 
-    beforeEach(function() {
+    beforeEach(function () {
         sandbox = sinon.createSandbox();
+        Hue.gonnaInitialize = false;
+        Hue.userKey = '';
+        Hue.bridge = {};
+        Hue.canceled = false;
     });
 
-    afterEach(function() {
+    afterEach(function () {
         sandbox.restore();
     });
 
-    describe('objectSort', function() {
-        it('should sort object keys alphabetically', function() {
+    describe('objectSort', function () {
+        it('should sort object keys alphabetically', function () {
             const input = { c: 3, a: 1, b: 2 };
             const expected = { a: 1, b: 2, c: 3 };
             const result = Hue.objectSort(input);
-            
+
             // Check keys order
             const keys = Object.keys(result);
             expect(keys).to.deep.equal(['a', 'b', 'c']);
             expect(result).to.deep.equal(expected);
         });
 
-        it('should handle empty objects', function() {
+        it('should handle empty objects', function () {
             const result = Hue.objectSort({});
             expect(result).to.deep.equal({});
         });
     });
 
-    describe('initialize', function() {
-        it('should return existing userKey if already initializing', async function() {
+    describe('initialize', function () {
+        it('should return existing userKey if already initializing', async function () {
             Hue.gonnaInitialize = true;
             Hue.userKey = 'existingUser';
-            
-            const result = await Hue.initialize('newUser', () => {});
-            
+
+            const result = await Hue.initialize('newUser', () => { });
+
             expect(result).to.equal('existingUser');
             // reset for other tests
             Hue.gonnaInitialize = false;

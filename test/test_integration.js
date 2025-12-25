@@ -26,6 +26,10 @@ describe('Hue Handler Integration Tests', function () {
 
     beforeEach(function () {
         sandbox = sinon.createSandbox();
+        Hue.gonnaInitialize = false;
+        Hue.userKey = '';
+        Hue.bridge = {};
+        Hue.canceled = false;
     });
 
     afterEach(function () {
