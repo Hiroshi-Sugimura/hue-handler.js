@@ -162,8 +162,12 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 				if (Hue.retryRemain === 0) { return Hue.userKey; } // リトライ限界が来たのでkey無しで返却
 			}
 		} catch (e) {
-			Hue.gonnaInitialize = false;
-			throw new Error("Exception! Hue.searchBridge.");
+			console.error("Exception! Hue.searchBridge.", e);
+			if (Hue.canceled) {
+				Hue.gonnaInitialize = false;
+				throw e; // キャンセルされていたら抜ける
+			}
+			// エラーでもリトライする (gonnaInitializeはfalseにしない)
 		}
 	}
 	Hue.retryRemain = 3;  // リトライ回数復帰
@@ -227,8 +231,11 @@ Hue.initialize = async function (userKey, userFunc, Options = { appName: '', dev
 				}
 			} catch (err) {
 				console.error(err);
-				Hue.gonnaInitialize = false;
-				throw err;
+				if (Hue.canceled) {
+					Hue.gonnaInitialize = false;
+					throw err;
+				}
+				// エラーでもリトライする
 			}
 			await Hue.sleep(5 * 1000); // 5秒待つ
 		}
